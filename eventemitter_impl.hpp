@@ -51,57 +51,28 @@ public:
   /// An error indicating the event name is not known
   class InvalidEvent : std::runtime_error {
   public:
-    explicit InvalidEvent(const std::string &msg) : std::runtime_error(msg) {}
+    explicit InvalidEvent(const std::string &msg);
   };
 
-  EventEmitter() : receivers_lock_(), receivers_() {}
-  virtual ~EventEmitter() noexcept = default;
+  EventEmitter();
+  virtual ~EventEmitter() noexcept;
 
   /// Set a callback for a given event name
   ///
   /// @param[in] ev - event name
   /// @param[in] cb - callback
-  virtual void on(const std::string &ev, Nan::Callback *cb) {
-    std::unique_lock<uv_rwlock> master_lock{receivers_lock_};
-    auto it = receivers_.find(ev);
-
-    if (it == receivers_.end()) {
-      receivers_.emplace(ev, std::make_shared<ReceiverList>());
-      it = receivers_.find(ev);
-    }
-    master_lock.unlock();
-
-    it->second->emplace_back(cb);
-  }
+  virtual void on(const std::string &ev, Nan::Callback *cb);
 
   /// Remove all listeners for a given event
   ///
   /// @param[in] ev - event name
-  virtual void removeAllListenersForEvent(const std::string &ev) {
-    std::unique_lock<uv_rwlock> master_lock{receivers_lock_};
-    auto it = receivers_.find(ev);
-
-    if (it != receivers_.end()) {
-      receivers_.erase(it);
-    }
-  }
+  virtual void removeAllListenersForEvent(const std::string &ev);
 
   /// Remove all listeners for all events
-  virtual void removeAllListeners() {
-    std::unique_lock<uv_rwlock> master_lock{receivers_lock_};
-    receivers_.clear();
-  }
+  virtual void removeAllListeners();
 
   // Return a list of all eventNames
-  virtual std::vector<std::string> eventNames() {
-    std::unique_lock<uv_rwlock> master_lock{receivers_lock_};
-    std::vector<std::string> keys;
-
-    for (auto it : receivers_) {
-      keys.emplace_back(it.first);
-    }
-    return keys;
-  }
+  virtual std::vector<std::string> eventNames();
 
   /// Emit a value to any registered callbacks for the event
   ///
@@ -111,17 +82,7 @@ public:
   /// @returns true if the event has listeners, false otherwise
   virtual bool emit(Nan::AsyncResource *async_resource, Nan::HandleScope &scope,
                     v8::Isolate *isolate, const std::string &event,
-                    EventValue value) const {
-    shared_lock<uv_rwlock> master_lock{receivers_lock_};
-    auto it = receivers_.find(event);
-    if (it == receivers_.end()) {
-      return false;
-    }
-    master_lock.unlock();
-
-    it->second->emit(async_resource, scope, isolate, value);
-    return true;
-  }
+                    EventValue value) const;
 
 private:
   /// Receiver represents a callback that will receive events that are fired
@@ -129,25 +90,16 @@ private:
   public:
     /// @param[in] callback - the callback to fire, should take a single
     /// argument (which can be any Constructable Value)
-    explicit Receiver(Nan::Callback *callback) : callback_(callback) {}
+    explicit Receiver(Nan::Callback *callback);
 
     /// notify the callback by building an AsyncWorker and scheduling it via
     /// Nan::AsyncQueueWorker()
     ///
     /// @param[in] value - the string value to send to the callback
     void notify(Nan::AsyncResource *async_resource, Nan::HandleScope &scope,
-                v8::Isolate *isolate, const EventValue value) const {
-      v8::Local<v8::Value> info[] = {value->construct(scope, isolate)};
+                v8::Isolate *isolate, const EventValue value) const;
 
-      // or  Nan::TypeError("First argument must be string");
-
-      callback_->Call(1, info, async_resource);
-    }
-
-    ~Receiver() {
-      callback_->Reset();
-      delete callback_;
-    }
+    ~Receiver();
 
   private:
     Nan::Callback *callback_;
@@ -157,26 +109,18 @@ private:
   /// shared mutex
   class ReceiverList {
   public:
-    ReceiverList() : receivers_list_(), receivers_list_lock_() {}
+    ReceiverList();
 
     /// Adds a callback to the end of the receivers_list
     ///
     /// @param[in] cb - the callback to add to the list
-    void emplace_back(Nan::Callback *cb) {
-      std::lock_guard<uv_rwlock> guard{receivers_list_lock_};
-      receivers_list_.emplace_back(std::make_shared<Receiver>(cb));
-    }
+    void emplace_back(Nan::Callback *cb);
 
     /// notify all receivers
     ///
     /// @param[in] value - the string to send to all receivers
     void emit(Nan::AsyncResource *async_resource, Nan::HandleScope &scope,
-              v8::Isolate *isolate, EventValue value) const {
-      shared_lock<uv_rwlock> guard{receivers_list_lock_};
-      for (auto &receiver : receivers_list_) {
-        receiver->notify(async_resource, scope, isolate, value);
-      }
-    }
+              v8::Isolate *isolate, EventValue value) const;
 
   private:
     std::vector<std::shared_ptr<Receiver>> receivers_list_;

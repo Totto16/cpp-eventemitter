@@ -31,6 +31,7 @@
 #include <nan.h>
 #include <uv.h>
 
+#include "constructable.hpp"
 #include "shared_ringbuffer.hpp"
 
 namespace NodeEvent {

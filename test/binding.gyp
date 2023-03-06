@@ -24,7 +24,30 @@
     }, "targets": [
         {
             "target_name": "eventemitter",
-            "sources": ["cpp/eventemitter.cpp"]
+            "sources": [
+                "cpp/eventemitter.cpp",
+            ],
+            'dependencies': [
+                'eventemitterlib',
+            ]
         },
+        {
+            'target_name': 'eventemitterlib',
+            'type': '<(library)',
+            "sources": [
+                "../constructable.cpp",
+                "../eventemitter_impl.cpp",
+                "../uv_rwlock_adaptor.cpp",
+            ],
+            "include_dirs": [
+                "../",
+            ],
+            'direct_dependent_settings': {
+                'include_dirs': [
+                    "../",
+                ]
+            },
+        },
+
     ]
 }

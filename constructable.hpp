@@ -44,14 +44,10 @@ using EventValue = std::shared_ptr<Constructable> const &;
 
 class StringConstructable : public Constructable {
 public:
-  explicit StringConstructable(const std::string &value)
-      : Constructable(), m_value{std::move(value)} {};
+  explicit StringConstructable(const std::string &value);
 
   virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-
-    return Nan::New<v8::String>(m_value).ToLocalChecked();
-  };
+                                         v8::Isolate *isolate) const override;
 
 private:
   std::string m_value;
@@ -59,13 +55,37 @@ private:
 
 class UndefinedConstructable : public Constructable {
 public:
-  explicit UndefinedConstructable() : Constructable(){};
+  explicit UndefinedConstructable();
 
   virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
+                                         v8::Isolate *isolate) const override;
+};
 
-    return Nan::Undefined();
-  };
+class FalseConstructable : public Constructable {
+public:
+  explicit FalseConstructable();
+
+  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                         v8::Isolate *isolate) const override;
+};
+
+class TrueConstructable : public Constructable {
+public:
+  explicit TrueConstructable();
+
+  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                         v8::Isolate *isolate) const override;
+};
+
+class BooleanConstructable : public Constructable {
+public:
+  explicit BooleanConstructable(bool &value);
+
+  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                         v8::Isolate *isolate) const override;
+
+private:
+  bool m_value;
 };
 
 class FalseConstructable : public Constructable {
@@ -92,110 +112,50 @@ public:
 
 class NullConstructable : public Constructable {
 public:
-  explicit NullConstructable() : Constructable(){};
+  explicit NullConstructable();
 
   virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-
-    return Nan::Null();
-  };
+                                         v8::Isolate *isolate) const override;
 };
 
 class TypeErrorConstructable : public Constructable {
 public:
-  explicit TypeErrorConstructable(const std::string &value)
-      : Constructable(), m_value{std::move(value)} {};
+  explicit TypeErrorConstructable(const std::string &value);
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
+  class IntNumberConstructable : public Constructable {
+  public:
+    explicit IntNumberConstructable(int32_t &value);
 
-    return Nan::TypeError(m_value.c_str());
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
+
+  private:
+    int32_t m_value;
   };
 
-private:
-  std::string m_value;
-};
+  class DoubleNumberConstructable : public Constructable {
+  public:
+    explicit DoubleNumberConstructable(double &value);
 
-class IntNumberConstructable : public Constructable {
-public:
-  explicit IntNumberConstructable(int32_t &value)
-      : Constructable(), m_value{value} {};
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-    return Nan::New<v8::Int32>(m_value);
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
+
+  private:
+    ObjectValues m_values;
   };
 
-private:
-  int32_t m_value;
-};
+  using ArrayValues = std::vector<std::shared_ptr<Constructable>>;
 
-class DoubleNumberConstructable : public Constructable {
-public:
-  explicit DoubleNumberConstructable(double &value)
-      : Constructable(), m_value{value} {};
+  class ArrayConstructable : public Constructable {
+  public:
+    explicit ArrayConstructable(ArrayValues values);
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-    return Nan::New<v8::Number>(m_value);
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
+
+  private:
+    ArrayValues m_values;
   };
-
-private:
-  double m_value;
-};
-
-using ObjectValues =
-    std::vector<std::pair<std::string, std::shared_ptr<Constructable>>>;
-class ObjectConstructable : public Constructable {
-public:
-  explicit ObjectConstructable(ObjectValues values)
-      : Constructable(), m_values{std::move(values)} {};
-
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-
-    v8::Local<v8::Object> result = v8::Object::New(isolate);
-
-    for (const auto &[key, value] : m_values) {
-      v8::Local<v8::String> keyValue =
-          Nan::New<v8::String>(key).ToLocalChecked();
-      result
-          ->Set(isolate->GetCurrentContext(), keyValue,
-                value->construct(scope, isolate))
-          .Check();
-    }
-
-    return v8::Local<v8::Value>::Cast(result);
-  };
-
-private:
-  ObjectValues m_values;
-};
-
-using ArrayValues = std::vector<std::shared_ptr<Constructable>>;
-
-class ArrayConstructable : public Constructable {
-public:
-  explicit ArrayConstructable(ArrayValues values)
-      : Constructable(), m_values{std::move(values)} {};
-
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override {
-
-    v8::Local<v8::Array> result = Nan::New<v8::Array>(m_values.size());
-
-    size_t i = 0;
-    for_each(m_values.begin(), m_values.end(),
-             [&](std::shared_ptr<Constructable> value) {
-               Nan::Set(result, i, value->construct(scope, isolate));
-               ++i;
-             });
-
-    return v8::Local<v8::Value>::Cast(result);
-  };
-
-private:
-  ArrayValues m_values;
-};
-
-#endif
