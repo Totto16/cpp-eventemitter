@@ -141,7 +141,6 @@ private:
   }
 
   bool SendProgress(const T *data, size_t size) {
-    // TODO: here lies an error 
     // use non_blocking and just drop any excessive items
     bool r = buffer_.push({data, size});
     uv_async_send(async_.get());
