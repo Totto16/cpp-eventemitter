@@ -21,12 +21,12 @@
  * SOFTWARE.
  */
 
-#include "constructable.hpp"
-#include <functional>
-
 #pragma once
 #ifndef _GLPK_EVENTEMITTER_CPP_EMITER_H
 #define _GLPK_EVENTEMITTER_CPP_EMITER_H
+
+#include "constructable.hpp"
+#include <functional>
 
 using EventEmitterFunction =
     std::function<int(const std::string event, const EventValue value)>;

@@ -20,15 +20,15 @@
  * SOFTWARE.
  */
 
+#pragma once
+#ifndef _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
+#define _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
+
 #include <memory>
 #include <nan.h>
 #include <string>
 #include <utility>
 #include <vector>
-
-#pragma once
-#ifndef _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
-#define _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
 
 /* abstract */ class Constructable {
 public:
@@ -88,6 +88,28 @@ private:
   bool m_value;
 };
 
+class FalseConstructable : public Constructable {
+public:
+  explicit FalseConstructable() : Constructable(){};
+
+  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                         v8::Isolate *isolate) const override {
+
+    return Nan::False();
+  };
+};
+
+class TrueConstructable : public Constructable {
+public:
+  explicit TrueConstructable() : Constructable(){};
+
+  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                         v8::Isolate *isolate) const override {
+
+    return Nan::True();
+  };
+};
+
 class NullConstructable : public Constructable {
 public:
   explicit NullConstructable();
@@ -100,60 +122,40 @@ class TypeErrorConstructable : public Constructable {
 public:
   explicit TypeErrorConstructable(const std::string &value);
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override;
+  class IntNumberConstructable : public Constructable {
+  public:
+    explicit IntNumberConstructable(int32_t &value);
 
-private:
-  std::string m_value;
-};
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
 
-class IntNumberConstructable : public Constructable {
-public:
-  explicit IntNumberConstructable(int32_t &value);
+  private:
+    int32_t m_value;
+  };
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override;
+  class DoubleNumberConstructable : public Constructable {
+  public:
+    explicit DoubleNumberConstructable(double &value);
 
-private:
-  int32_t m_value;
-};
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
 
-class DoubleNumberConstructable : public Constructable {
-public:
-  explicit DoubleNumberConstructable(double &value);
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override;
+  private:
+    ObjectValues m_values;
+  };
 
-private:
-  double m_value;
-};
+  using ArrayValues = std::vector<std::shared_ptr<Constructable>>;
 
-using ObjectValues =
-    std::vector<std::pair<std::string, std::shared_ptr<Constructable>>>;
+  class ArrayConstructable : public Constructable {
+  public:
+    explicit ArrayConstructable(ArrayValues values);
 
-class ObjectConstructable : public Constructable {
-public:
-  explicit ObjectConstructable(ObjectValues values);
+    virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
+                                           v8::Isolate *isolate) const override;
 
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override;
-
-private:
-  ObjectValues m_values;
-};
-
-using ArrayValues = std::vector<std::shared_ptr<Constructable>>;
-
-class ArrayConstructable : public Constructable {
-public:
-  explicit ArrayConstructable(ArrayValues values);
-
-  virtual v8::Local<v8::Value> construct(Nan::HandleScope &scope,
-                                         v8::Isolate *isolate) const override;
-
-private:
-  ArrayValues m_values;
-};
-
-#endif
+  private:
+    ArrayValues m_values;
+  };
