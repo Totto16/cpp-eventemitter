@@ -20,15 +20,15 @@
  * SOFTWARE.
  */
 
+#pragma once
+#ifndef _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
+#define _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
+
 #include <memory>
 #include <nan.h>
 #include <string>
 #include <utility>
 #include <vector>
-
-#pragma once
-#ifndef _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
-#define _NODE_EVENT_EVENTEMITTER_CONSTRUCTABLE_H
 
 /* abstract */ class Constructable {
 public:

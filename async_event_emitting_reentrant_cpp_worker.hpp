@@ -23,6 +23,7 @@
 #pragma once
 #ifndef _NODE_EVENT_ASYNC_EVENT_EMITTING_REENTRANT_C_WORKER
 #define _NODE_EVENT_ASYNC_EVENT_EMITTING_REENTRANT_C_WORKER
+
 #include <functional>
 #include <memory>
 
